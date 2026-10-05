@@ -251,15 +251,19 @@ def main(argv=None):
                         for key_name, idx in KEY_MAP.items():
                             hue = (idx * 5 + t * 40) % 360
                             rad = math.radians(hue)
-                            r = int(127 * (math.sin(rad) + 1))
-                            g = int(127 * (math.sin(rad + 2 * math.pi / 3) + 1))
-                            b = int(127 * (math.sin(rad + 4 * math.pi / 3) + 1))
+                            r = int(115 * (math.sin(rad) + 1)) + 24
+                            g = int(115 * (math.sin(rad + 2 * math.pi / 3) + 1)) + 24
+                            b = int(115 * (math.sin(rad + 4 * math.pi / 3) + 1)) + 24
                             colors[idx * 3] = r
                             colors[idx * 3 + 1] = g
                             colors[idx * 3 + 2] = b
+                        # Populate auxiliary position 65 next to Left Shift (64)
+                        colors[65 * 3] = colors[64 * 3]
+                        colors[65 * 3 + 1] = colors[64 * 3 + 1]
+                        colors[65 * 3 + 2] = colors[64 * 3 + 2]
                         kbd.stream_frame(colors)
                         t += 0.05
-                        time.sleep(0.03)
+                        time.sleep(0.02)
                 except KeyboardInterrupt:
                     print("\nДемо остановлено.")
                     kbd.close_stream()

@@ -109,7 +109,10 @@ class HatorKeyboard:
     
     TOTAL_KEYS = 128
     TOTAL_BYTES = 128 * 3  # 384 bytes
-    CHUNK_LEN = 56         # 63 - 7
+    ROW_KEYS = 16
+    ROW_BYTES = 16 * 3     # 48 bytes (1 row)
+    CHUNK_LEN = 56         # For 0x15, 0x19, 0x1A, 0x41
+    STREAM_CHUNK_LEN = 48  # Row-aligned 48-byte chunks for 0x1D CMD_LIVE_SYNC
     REPORT_ID = 6
     
     def __init__(self, vendor_id: Optional[int] = None, product_id: Optional[int] = None):
@@ -120,6 +123,8 @@ class HatorKeyboard:
         self.custom_colors = [0] * self.TOTAL_BYTES
         self.light_data = list(DEFAULT_LIGHT_DATA)
         self._connected = False
+        self._in_stream = False
+        self._orig_mode: Optional[int] = None
 
     def find_device(self) -> Optional[bytes]:
         """Find the matching HID device path."""
@@ -193,6 +198,11 @@ class HatorKeyboard:
 
     def disconnect(self):
         """Close connection to the keyboard."""
+        if self._in_stream:
+            try:
+                self.close_stream()
+            except Exception:
+                pass
         if self.device:
             try:
                 self.device.close()
@@ -441,17 +451,61 @@ class HatorKeyboard:
         """
         Send a real-time live frame directly to LEDs without saving to flash.
         Perfect for animations, audio visualizers, and games.
+        Transmits in 8 row-aligned 48-byte chunks (16 keys per row * 3 bytes RGB)
+        to prevent column boundary multiplexing flicker (CS0/CS1).
         """
+        if not self._connected or not self.device:
+            raise RuntimeError("Клавиатура не подключена!")
+
+        # 1. On entering streaming mode, temporarily switch to Mode 20 (Music / Live Sync)
+        # to silence internal animation engines (like Wave) that compete for the LED matrix
+        if not self._in_stream:
+            self._orig_mode = self.light_data[1]
+            if self._orig_mode != 20:
+                self.light_data[1] = 20
+                self.write_settings()
+            if sys.platform == "win32":
+                try:
+                    import ctypes
+                    ctypes.windll.winmm.timeBeginPeriod(1)
+                except Exception:
+                    pass
+            self._in_stream = True
+
         buf = colors if colors is not None else self.custom_colors
-        chunks = (self.TOTAL_BYTES + self.CHUNK_LEN - 1) // self.CHUNK_LEN
+        # Exactly 8 chunks of 48 bytes (one matrix row per USB packet)
+        chunks = (self.TOTAL_BYTES + self.STREAM_CHUNK_LEN - 1) // self.STREAM_CHUNK_LEN
         for c in range(chunks):
-            offset = c * self.CHUNK_LEN
-            chunk = buf[offset:offset + self.CHUNK_LEN]
-            self._send_cmd(CMD_LIVE_SYNC, offset, chunk)
+            offset = c * self.STREAM_CHUNK_LEN
+            chunk = buf[offset:offset + self.STREAM_CHUNK_LEN]
+            packet = _build_packet(CMD_LIVE_SYNC, offset, chunk)
+            self.device.write([self.REPORT_ID] + packet)
 
     def close_stream(self):
-        """Exit live streaming mode (0x1E)."""
-        self._send_cmd(CMD_CLOSE_SYNC, 0, [])
+        """Exit live streaming mode (0x1E) and restore previous hardware lighting mode."""
+        if not self._connected or not self.device:
+            return
+        packet = _build_packet(CMD_CLOSE_SYNC, 0, [])
+        try:
+            self.device.write([self.REPORT_ID] + packet)
+            # Drain confirmation packet if available
+            _ = self.device.read(64, timeout_ms=50)
+        except Exception:
+            pass
+
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                ctypes.windll.winmm.timeEndPeriod(1)
+            except Exception:
+                pass
+
+        if self._in_stream and self._orig_mode is not None and self._orig_mode != 20:
+            try:
+                self.set_mode(self._orig_mode)
+            except Exception:
+                pass
+        self._in_stream = False
 
     # ----------------------------------------------------
     # TFT Screen Control & Reset

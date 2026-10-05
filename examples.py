@@ -72,17 +72,22 @@ def example_live_animation():
             for key_name, idx in KEY_MAP.items():
                 # Синусоидальная бегущая волна
                 val = (math.sin(idx * 0.15 + t) + 1.0) / 2.0
-                r = int(255 * val)
-                g = int(50 * (1.0 - val))
-                b = int(255 * (1.0 - val))
+                r = int(210 * val) + 24
+                g = int(40 * (1.0 - val)) + 15
+                b = int(210 * (1.0 - val)) + 24
                 
                 colors[idx * 3] = r
                 colors[idx * 3 + 1] = g
                 colors[idx * 3 + 2] = b
             
+            # Populate auxiliary position 65 next to Left Shift (64)
+            colors[65 * 3] = colors[64 * 3]
+            colors[65 * 3 + 1] = colors[64 * 3 + 1]
+            colors[65 * 3 + 2] = colors[64 * 3 + 2]
+
             # Отправка кадра в реальном времени напрямую на светодиоды
             kbd.stream_frame(colors)
-            time.sleep(0.03)  # ~30 кадров в секунду
+            time.sleep(0.02)  # ~50 кадров в секунду
             
         kbd.close_stream()
         print("Потоковая анимация завершена.")
@@ -130,4 +135,8 @@ def example_cpu_monitor():
 
 
 if __name__ == "__main__":
-    example_simple_colors()
+    import sys
+    if len(sys.argv) > 1 and "demo" in sys.argv[1].lower():
+        example_live_animation()
+    else:
+        example_simple_colors()
