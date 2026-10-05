@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hator-keyboard"
+version = "0.2.0"
+description = "Python library and CLI for Hator Icefall PRO RGB keyboard lighting and TFT screen"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "vinni" }
+]
+keywords = [
+    "hator",
+    "icefall",
+    "keyboard",
+    "rgb",
+    "hid",
+    "webhid",
+    "lighting",
+    "screen",
+    "custom-keyboard"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: System :: Hardware",
+]
+dependencies = [
+    "hidapi>=0.14.0",
+]
+
+[project.optional-dependencies]
+screen = [
+    "Pillow>=9.0.0",
+    "psutil>=5.8.0",
+]
+all = [
+    "Pillow>=9.0.0",
+    "psutil>=5.8.0",
+]
+
+[project.scripts]
+hator = "hator_keyboard.cli:main"
+hator-keyboard = "hator_keyboard.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/vinni/icefallDOOM"
+Repository = "https://github.com/vinni/icefallDOOM.git"
+Issues = "https://github.com/vinni/icefallDOOM/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hator_keyboard*"]
+exclude = ["tests*", "examples*"]
+
+[tool.setuptools.package-data]
+hator_keyboard = ["py.typed", "udev/*.rules"]
