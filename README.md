@@ -14,16 +14,16 @@
 
 ```bash
 # Базовая установка (управление подсветкой и встроенными режимами):
-pip install git+https://github.com/vinni/icefallDOOM.git
+pip install git+https://github.com/vanyabudash2-netizen/icefallDOOM.git
 
 # Полная установка (с поддержкой TFT-экрана, загрузки картинок и HUD-мониторинга):
-pip install "hator-keyboard[all] @ git+https://github.com/vinni/icefallDOOM.git"
+pip install "hator-keyboard[all] @ git+https://github.com/vanyabudash2-netizen/icefallDOOM.git"
 ```
 
 ### 2. Установка из локального репозитория (для разработки):
 
 ```bash
-git clone https://github.com/vinni/icefallDOOM.git
+git clone https://github.com/vanyabudash2-netizen/icefallDOOM.git
 cd icefallDOOM
 
 # Установка в режиме разработки:
